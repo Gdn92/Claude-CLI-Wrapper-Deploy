@@ -17,7 +17,7 @@ export function Sidebar() {
       .then(r => r.json())
       .then(setProjects)
       .catch(() => {}) // server may not be running yet
-  }, [])
+  }, [setProjects])
 
   useEffect(() => {
     if (!activeProjectId) return
@@ -25,7 +25,7 @@ export function Sidebar() {
       .then(r => r.json())
       .then(setThreads)
       .catch(() => {})
-  }, [activeProjectId])
+  }, [activeProjectId, setThreads])
 
   async function newProject() {
     const path = prompt('Project directory path (absolute):')
