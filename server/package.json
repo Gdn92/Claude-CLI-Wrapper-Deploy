@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "nodemon --exec ts-node src/index.ts --watch src",
     "build": "tsc",
+    "start": "node dist/src/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "postinstall": "node -e \"const{execSync}=require('child_process');const{existsSync}=require('fs');const p='node_modules/node-pty/prebuilds/darwin-arm64/spawn-helper';if(existsSync(p))execSync('chmod +x '+p)\""

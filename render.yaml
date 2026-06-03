@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: ccw-process-server
+    env: node
+    plan: free
+    region: oregon
+    rootDir: server
+    buildCommand: npm install && npm run build && npm install -g @anthropic-ai/claude-code
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_EMAIL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: SITE_PASSWORD
+        sync: false
