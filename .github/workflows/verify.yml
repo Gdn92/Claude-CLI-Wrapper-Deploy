@@ -1,0 +1,36 @@
+name: verify
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: test + typecheck + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install root deps
+        run: npm ci --ignore-scripts
+
+      - name: Install server deps
+        run: cd server && npm ci --ignore-scripts
+
+      - name: Run verify gate
+        run: bash scripts/verify.sh
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          CI: 'true'
