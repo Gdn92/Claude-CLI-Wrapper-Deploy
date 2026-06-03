@@ -5,6 +5,9 @@ import { join } from 'path'
 import { ThreadStore } from './thread-store'
 import { AgentBus } from './agent-bus'
 import { handleConnection } from './ws-handler'
+import { PushService } from './push-service'
+import { TaskRunner } from './task-runner'
+import type webpush from 'web-push'
 
 const PORT = parseInt(process.env.PORT ?? '3001')
 const DB_PATH = process.env.DB_PATH ?? join(process.cwd(), 'data', 'threads.db')
@@ -13,6 +16,8 @@ mkdirSync(join(process.cwd(), 'data'), { recursive: true })
 
 const store = new ThreadStore(DB_PATH)
 const bus = new AgentBus()
+const push = new PushService(store)
+const taskRunner = new TaskRunner(store, push)
 
 const app = Fastify({ logger: true })
 
@@ -52,6 +57,26 @@ async function main() {
   app.patch<{ Params: { threadId: string }; Body: { title: string } }>('/threads/:threadId/title', async (req) => {
     store.updateThreadTitle(req.params.threadId, req.body.title)
     return { ok: true }
+  })
+
+  // Push subscription registration (browser calls this on first visit)
+  app.post<{ Body: webpush.PushSubscription }>('/push/subscribe', async (req) => {
+    push.addSubscription(req.body)
+    return { ok: true }
+  })
+
+  // Expose public VAPID key so browser can construct push subscription
+  app.get('/push/vapid-public-key', async () => ({
+    key: process.env.VAPID_PUBLIC_KEY ?? '',
+  }))
+
+  // Async task submission — returns immediately, claude runs in background
+  app.post<{ Body: { threadId: string; projectPath: string; content: string } }>('/tasks', async (req) => {
+    const { threadId, projectPath, content } = req.body
+    store.appendMessage(threadId, 'user', 'text', content, {})
+    const taskId = store.createTask(threadId, projectPath, content)
+    taskRunner.run(taskId, threadId, projectPath, content)
+    return { taskId, status: 'running' }
   })
 
   await app.listen({ port: PORT, host: '0.0.0.0' })
