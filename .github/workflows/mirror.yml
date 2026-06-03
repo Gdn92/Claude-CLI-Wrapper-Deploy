@@ -16,6 +16,6 @@ jobs:
       - name: mirror-repository
         uses: yesolutions/mirror-action@v0.7.0
         with:
-          REMOTE: "git@github.com:gdnkei0/Claude-CLI-Wrapper-mirror.git"
+          REMOTE: "git@github.com:Gdn92/Claude-CLI-Wrapper-Deploy.git"
           GIT_SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           GIT_SSH_NO_VERIFY_HOST: "true"
