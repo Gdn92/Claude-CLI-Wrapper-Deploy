@@ -4,7 +4,7 @@ import { useStore } from '@/lib/store'
 import { wsClient } from '@/lib/ws-client'
 import { TextBubble } from './ui/TextBubble'
 import { ToolCallCard } from './ToolCallCard'
-import type { TurnEvent, ToolCallStartEvent, ToolCallEndEvent } from '@/lib/types'
+import type { TurnEvent, ToolCallStartEvent, ToolCallEndEvent, Message } from '@/lib/types'
 
 const SERVER = process.env.NEXT_PUBLIC_PROCESS_SERVER_URL ?? 'http://localhost:3001'
 
@@ -35,7 +35,7 @@ export function ConversationPane() {
     if (!activeThreadId) { setItems([]); return }
     fetch(`${SERVER}/threads/${activeThreadId}/messages`)
       .then(r => r.json())
-      .then((msgs: any[]) => {
+      .then((msgs: Message[]) => {
         setItems(msgs.map(m => ({
           key: m.id,
           type: m.type === 'text' ? 'text' : 'tool',
@@ -74,8 +74,8 @@ export function ConversationPane() {
         costUsd: event.costUsd,
         durationMs: event.durationMs,
       }])
-    } else if ((event as any).type === 'diff_result') {
-      setCurrentDiff((event as any).diff)
+    } else if ((event as unknown as { type: string; diff: unknown }).type === 'diff_result') {
+      setCurrentDiff((event as unknown as { type: string; diff: unknown }).diff)
     }
   }, [setRunning, setSessionId, setCurrentDiff])
 

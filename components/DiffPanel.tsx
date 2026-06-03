@@ -3,7 +3,12 @@ import { useEffect, useRef } from 'react'
 import { useStore } from '@/lib/store'
 
 // Reconstruct unified diff string from our DiffMetadata for diff2html
-function metadataToDiffString(diff: any): string {
+interface DiffData {
+  files: Array<{ oldPath: string; newPath: string; hunks: Array<{ header: string; lines: string[] }> }>
+  branch: string
+}
+
+function metadataToDiffString(diff: DiffData): string {
   if (!diff?.files?.length) return ''
   const lines: string[] = []
   for (const file of diff.files) {
@@ -24,7 +29,7 @@ export function DiffPanel() {
 
   useEffect(() => {
     if (!currentDiff || !containerRef.current || !diffPanelOpen) return
-    const raw = metadataToDiffString(currentDiff)
+    const raw = metadataToDiffString(currentDiff as DiffData)
     if (!raw) return
 
     // Dynamic import keeps diff2html out of initial bundle
@@ -38,8 +43,9 @@ export function DiffPanel() {
 
   if (!diffPanelOpen) return null
 
-  const fileCount = (currentDiff as any)?.files?.length ?? 0
-  const branch = (currentDiff as any)?.branch ?? ''
+  const diff = currentDiff as DiffData | null
+  const fileCount = diff?.files?.length ?? 0
+  const branch = diff?.branch ?? ''
 
   return (
     <div className="w-[480px] flex-shrink-0 border-l border-neutral-800 flex flex-col h-full">
