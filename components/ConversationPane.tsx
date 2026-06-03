@@ -135,7 +135,7 @@ export function ConversationPane() {
     <div className="flex-1 flex flex-col min-h-0 min-w-0 relative overflow-hidden">
       {/* Message list */}
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 w-full [&>*]:max-w-full"
         onScroll={(e) => {
           const el = e.currentTarget
           setPinned(el.scrollHeight - el.scrollTop - el.clientHeight > 50)

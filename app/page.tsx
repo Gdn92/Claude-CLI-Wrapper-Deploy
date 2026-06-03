@@ -9,19 +9,35 @@ export default function Home() {
   const { sidebarOpen, setSidebarOpen } = useStore()
 
   return (
-    <div className="flex h-screen relative overflow-hidden">
-      {sidebarOpen ? (
-        <Sidebar />
-      ) : (
+    <div className="flex h-screen overflow-hidden bg-neutral-950">
+      {/* Mobile: full-screen overlay sidebar with backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/60 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`
+        md:relative fixed inset-y-0 left-0 z-40 flex-shrink-0
+        transition-transform duration-200 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:-translate-x-full'}
+      `}>
+        {sidebarOpen && <Sidebar />}
+      </div>
+
+      {/* Hamburger — always in layout flow so content takes full width on mobile */}
+      {!sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(true)}
-          className="w-10 flex-shrink-0 flex flex-col items-center justify-center gap-1 text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900 border-r border-neutral-800 transition-colors"
-          aria-label="Expand sidebar"
-          title="Open sidebar"
+          className="flex-shrink-0 w-10 flex items-center justify-center text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900 border-r border-neutral-800 transition-colors"
+          aria-label="Open sidebar"
         >
-          <span className="text-xs">☰</span>
+          ☰
         </button>
       )}
+
       <main className="flex flex-1 min-w-0 overflow-hidden">
         <ConversationPane />
         <DiffPanel />

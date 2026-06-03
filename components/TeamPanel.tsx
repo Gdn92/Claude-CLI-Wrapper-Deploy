@@ -37,7 +37,7 @@ export function TeamPanel() {
     return (
       <button
         onClick={() => setTeamPanelOpen(true)}
-        className="fixed bottom-4 right-4 bg-neutral-800 text-white text-xs px-3 py-2 rounded-full border border-neutral-700 hover:bg-neutral-700 transition-colors shadow-lg z-50"
+        className="fixed bottom-20 right-3 bg-neutral-800 text-white text-xs px-3 py-1.5 rounded-full border border-neutral-700 hover:bg-neutral-700 transition-colors shadow-lg z-20"
       >
         Team{teamId ? ` · ${teamId}` : ''}
       </button>
@@ -45,7 +45,7 @@ export function TeamPanel() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 w-64 bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl text-xs z-50">
+    <div className="fixed bottom-20 right-3 w-64 bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl text-xs z-20">
       <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-800">
         <span className="text-neutral-300 font-medium">Agent Team</span>
         <button
