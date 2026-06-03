@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import Fastify from 'fastify'
 import websocket from '@fastify/websocket'
+import cors from '@fastify/cors'
 import { mkdirSync } from 'fs'
 import { join } from 'path'
 import { ThreadStore } from './thread-store'
@@ -23,6 +24,7 @@ const taskRunner = new TaskRunner(store, push)
 const app = Fastify({ logger: true })
 
 async function main() {
+  await app.register(cors, { origin: true })
   await app.register(websocket)
 
   // WebSocket endpoint — one connection per browser session

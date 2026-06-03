@@ -82,6 +82,7 @@ export const useStore = create<AppStore>()(
         sidebarOpen: s.sidebarOpen,
         diffStyle: s.diffStyle,
         activeProjectId: s.activeProjectId,
+        activeThreadId: s.activeThreadId,
       }),
     }
   )

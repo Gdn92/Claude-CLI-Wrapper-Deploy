@@ -9,19 +9,20 @@ export default function Home() {
   const { sidebarOpen, setSidebarOpen } = useStore()
 
   return (
-    <div className="flex h-screen relative">
+    <div className="flex h-screen relative overflow-hidden">
       {sidebarOpen ? (
         <Sidebar />
       ) : (
         <button
           onClick={() => setSidebarOpen(true)}
-          className="w-8 flex-shrink-0 flex items-center justify-center text-neutral-500 hover:text-neutral-200 border-r border-neutral-800"
+          className="w-10 flex-shrink-0 flex flex-col items-center justify-center gap-1 text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900 border-r border-neutral-800 transition-colors"
           aria-label="Expand sidebar"
+          title="Open sidebar"
         >
-          →
+          <span className="text-xs">☰</span>
         </button>
       )}
-      <main className="flex flex-1 min-w-0">
+      <main className="flex flex-1 min-w-0 overflow-hidden">
         <ConversationPane />
         <DiffPanel />
       </main>

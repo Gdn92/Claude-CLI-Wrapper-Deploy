@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useStore } from '@/lib/store'
 import type { Project, Thread } from '@/lib/types'
 
@@ -11,6 +11,9 @@ export function Sidebar() {
     setProjects, setThreads, setActiveProject, setActiveThread,
     setSidebarOpen,
   } = useStore()
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const renameRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetch(`${SERVER}/projects`)
@@ -49,6 +52,25 @@ export function Sidebar() {
     }).then(r => r.json())
     setThreads([t, ...threads])
     setActiveThread(t.id)
+  }
+
+  function startRename(t: Thread, e: React.MouseEvent) {
+    e.stopPropagation()
+    setRenamingId(t.id)
+    setRenameValue(t.title)
+    setTimeout(() => renameRef.current?.select(), 0)
+  }
+
+  async function commitRename(id: string) {
+    const title = renameValue.trim()
+    if (!title) { setRenamingId(null); return }
+    await fetch(`${SERVER}/threads/${id}/title`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title }),
+    }).catch(() => {})
+    setThreads(threads.map(t => t.id === id ? { ...t, title } : t))
+    setRenamingId(null)
   }
 
   async function deleteThread(id: string, e: React.MouseEvent) {
@@ -97,7 +119,27 @@ export function Sidebar() {
                         : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
                     }`}
                   >
-                    <span className="truncate text-xs">{t.title}</span>
+                    {renamingId === t.id ? (
+                      <input
+                        ref={renameRef}
+                        value={renameValue}
+                        onChange={e => setRenameValue(e.target.value)}
+                        onBlur={() => commitRename(t.id)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') commitRename(t.id)
+                          if (e.key === 'Escape') setRenamingId(null)
+                        }}
+                        onClick={e => e.stopPropagation()}
+                        className="flex-1 bg-neutral-600 text-white text-xs px-1 rounded outline-none min-w-0"
+                      />
+                    ) : (
+                      <span
+                        className="truncate text-xs flex-1"
+                        onDoubleClick={(e) => startRename(t, e)}
+                      >
+                        {t.title}
+                      </span>
+                    )}
                     <button
                       onClick={(e) => deleteThread(t.id, e)}
                       className="opacity-0 group-hover:opacity-100 text-neutral-500 hover:text-red-400 ml-1 text-xs shrink-0"

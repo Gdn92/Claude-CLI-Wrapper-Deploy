@@ -132,10 +132,10 @@ export function ConversationPane() {
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 relative">
+    <div className="flex-1 flex flex-col min-h-0 min-w-0 relative overflow-hidden">
       {/* Message list */}
       <div
-        className="flex-1 overflow-y-auto px-4 py-4"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4"
         onScroll={(e) => {
           const el = e.currentTarget
           setPinned(el.scrollHeight - el.scrollTop - el.clientHeight > 50)
@@ -144,8 +144,12 @@ export function ConversationPane() {
         {items.map(item => {
           if (item.type === 'cost') {
             return (
-              <div key={item.key} className="text-neutral-600 text-xs mb-3 text-right font-mono">
-                ${item.costUsd?.toFixed(4)} · {((item.durationMs ?? 0) / 1000).toFixed(1)}s
+              <div key={item.key} className="flex items-center gap-2 mb-4 ml-9">
+                <div className="h-px flex-1 bg-neutral-800" />
+                <span className="text-neutral-600 text-xs font-mono shrink-0">
+                  ${item.costUsd?.toFixed(4)} · {((item.durationMs ?? 0) / 1000).toFixed(1)}s
+                </span>
+                <div className="h-px flex-1 bg-neutral-800" />
               </div>
             )
           }
@@ -154,10 +158,17 @@ export function ConversationPane() {
               <TextBubble key={item.key} content={item.content ?? ''} role={item.role ?? 'assistant'} />
             )
           }
+          if (!item.start) {
+            return (
+              <div key={item.key} className="mb-2 ml-9 text-xs text-neutral-600 font-mono overflow-hidden">
+                <span className="block truncate">{item.content ?? '(tool call)'}</span>
+              </div>
+            )
+          }
           return (
             <ToolCallCard
               key={item.key}
-              start={item.start!}
+              start={item.start}
               end={item.end}
               onViewDiff={() => {
                 wsClient.send('diff_request', { cwd: activeProject?.path ?? '' })
@@ -166,6 +177,15 @@ export function ConversationPane() {
             />
           )
         })}
+        {isRunning && (
+          <div className="flex gap-3 mb-4 ml-9">
+            <div className="flex gap-1 items-center">
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
 
@@ -179,29 +199,33 @@ export function ConversationPane() {
       )}
 
       {/* Input bar */}
-      <div className="border-t border-neutral-800 px-3 py-3 flex gap-2 items-end">
+      <div className="border-t border-neutral-800 px-4 py-3 flex gap-2 items-end bg-neutral-950 shrink-0">
         <textarea
           value={input}
-          onChange={e => setInput(e.target.value)}
+          onChange={e => {
+            setInput(e.target.value)
+            e.target.style.height = 'auto'
+            e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px'
+          }}
           onKeyDown={e => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
           }}
-          placeholder="Message Claude... (Enter to send, Shift+Enter for newline)"
+          placeholder="Message Claude... (Shift+Enter for newline)"
           rows={1}
-          className="flex-1 bg-neutral-900 text-white text-sm px-3 py-2 rounded-lg border border-neutral-700 focus:border-neutral-400 outline-none resize-none"
+          className="flex-1 bg-neutral-900 text-white text-sm px-3 py-2 rounded-xl border border-neutral-700 focus:border-neutral-500 outline-none resize-none min-h-[38px] leading-relaxed"
           style={{ maxHeight: '160px', overflowY: 'auto' }}
         />
         {isRunning ? (
           <button
             onClick={cancel}
-            className="bg-red-500/20 text-red-400 px-3 py-2 rounded-lg text-sm hover:bg-red-500/30 shrink-0"
+            className="bg-red-500/20 text-red-400 px-3 py-2 rounded-xl text-sm hover:bg-red-500/30 shrink-0 h-[38px]"
           >
             Stop
           </button>
         ) : (
           <button
             onClick={send}
-            className="bg-white text-black px-3 py-2 rounded-lg text-sm font-medium hover:bg-neutral-200 shrink-0"
+            className="bg-white text-black px-4 py-2 rounded-xl text-sm font-medium hover:bg-neutral-200 shrink-0 h-[38px]"
           >
             Send
           </button>

@@ -10,11 +10,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@tailwindcss/typography": "^0.5.19",
     "diff2html": "^3.4.56",
     "next": "14.2.35",
     "next-pwa": "^5.6.0",
     "react": "^18",
     "react-dom": "^18",
+    "react-markdown": "^10.1.0",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

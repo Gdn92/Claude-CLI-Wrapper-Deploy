@@ -34,7 +34,7 @@ export function handleConnection(ws: WebSocket, bus: AgentBus, store: ThreadStor
         if (!pm) {
           pm = new ProcessManager({
             command: 'claude',
-            args: ['--output-format', 'stream-json', '--print', content],
+            args: ['--output-format', 'stream-json', '--verbose', '--print', content],
             cwd: projectPath,
             onEvent: (event) => {
               bus.send(sessionId, event)

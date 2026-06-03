@@ -5,9 +5,10 @@ type EventHandler = (event: TurnEvent) => void
 class WsClient {
   private ws: WebSocket | null = null
   private handlers: EventHandler[] = []
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
   connect() {
-    if (this.ws?.readyState === WebSocket.OPEN) return
+    if (this.ws?.readyState === WebSocket.OPEN || this.ws?.readyState === WebSocket.CONNECTING) return
     const url = (process.env.NEXT_PUBLIC_PROCESS_SERVER_URL ?? 'http://localhost:3001')
       .replace(/^http/, 'ws') + '/ws'
     this.ws = new WebSocket(url)
@@ -18,6 +19,13 @@ class WsClient {
       } catch {
         // malformed message - ignore
       }
+    }
+    this.ws.onclose = () => {
+      if (this.reconnectTimer) return
+      this.reconnectTimer = setTimeout(() => {
+        this.reconnectTimer = null
+        this.connect()
+      }, 2000)
     }
   }
 
