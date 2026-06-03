@@ -6,7 +6,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.next()
   }
   const url = req.nextUrl.clone()
-  if (url.pathname === '/login') return NextResponse.next()
+  if (url.pathname === '/login' || url.pathname === '/api/login') return NextResponse.next()
   url.pathname = '/login'
   return NextResponse.redirect(url)
 }
