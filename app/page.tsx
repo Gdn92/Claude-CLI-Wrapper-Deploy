@@ -1,6 +1,7 @@
 'use client'
 import { useStore } from '@/lib/store'
 import { Sidebar } from '@/components/Sidebar'
+import { ConversationPane } from '@/components/ConversationPane'
 
 export default function Home() {
   const { sidebarOpen, setSidebarOpen } = useStore()
@@ -19,9 +20,7 @@ export default function Home() {
         </button>
       )}
       <main className="flex flex-1 min-w-0">
-        <div className="flex-1 min-w-0 flex items-center justify-center text-neutral-600 text-sm">
-          Select or create a thread to start
-        </div>
+        <ConversationPane />
         <div className="w-96 border-l border-neutral-800 flex-shrink-0" />
       </main>
     </div>
