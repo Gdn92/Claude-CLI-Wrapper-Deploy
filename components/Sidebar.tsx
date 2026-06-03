@@ -13,13 +13,15 @@ export function Sidebar() {
   } = useStore()
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
+  const [menuId, setMenuId] = useState<string | null>(null)
   const renameRef = useRef<HTMLInputElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch(`${SERVER}/projects`)
       .then(r => r.json())
       .then(setProjects)
-      .catch(() => {}) // server may not be running yet
+      .catch(() => {})
   }, [setProjects])
 
   useEffect(() => {
@@ -29,6 +31,16 @@ export function Sidebar() {
       .then(setThreads)
       .catch(() => {})
   }, [activeProjectId, setThreads])
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuId) return
+    const handler = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenuId(null)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [menuId])
 
   async function newProject() {
     const path = prompt('Project directory path (absolute):')
@@ -54,10 +66,10 @@ export function Sidebar() {
     setActiveThread(t.id)
   }
 
-  function startRename(t: Thread, e: React.MouseEvent) {
-    e.stopPropagation()
-    setRenamingId(t.id)
-    setRenameValue(t.title)
+  function startRename(id: string, title: string) {
+    setMenuId(null)
+    setRenamingId(id)
+    setRenameValue(title)
     setTimeout(() => renameRef.current?.select(), 0)
   }
 
@@ -73,8 +85,8 @@ export function Sidebar() {
     setRenamingId(null)
   }
 
-  async function deleteThread(id: string, e: React.MouseEvent) {
-    e.stopPropagation()
+  async function deleteThread(id: string) {
+    setMenuId(null)
     if (!confirm('Delete this thread?')) return
     await fetch(`${SERVER}/threads/${id}`, { method: 'DELETE' })
     setThreads(threads.filter(t => t.id !== id))
@@ -110,43 +122,55 @@ export function Sidebar() {
             {activeProjectId === p.id && (
               <div className="ml-3">
                 {threads.map(t => (
-                  <div
-                    key={t.id}
-                    onClick={() => setActiveThread(t.id)}
-                    className={`group flex items-center justify-between px-2 py-1 cursor-pointer rounded-sm transition-colors ${
-                      activeThreadId === t.id
-                        ? 'bg-neutral-700 text-white'
-                        : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
-                    }`}
-                  >
-                    {renamingId === t.id ? (
-                      <input
-                        ref={renameRef}
-                        value={renameValue}
-                        onChange={e => setRenameValue(e.target.value)}
-                        onBlur={() => commitRename(t.id)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') commitRename(t.id)
-                          if (e.key === 'Escape') setRenamingId(null)
-                        }}
-                        onClick={e => e.stopPropagation()}
-                        className="flex-1 bg-neutral-600 text-white text-xs px-1 rounded outline-none min-w-0"
-                      />
-                    ) : (
-                      <span
-                        className="truncate text-xs flex-1"
-                        onDoubleClick={(e) => startRename(t, e)}
-                      >
-                        {t.title}
-                      </span>
-                    )}
-                    <button
-                      onClick={(e) => deleteThread(t.id, e)}
-                      className="opacity-0 group-hover:opacity-100 text-neutral-500 hover:text-red-400 ml-1 text-xs shrink-0"
-                      aria-label="Delete thread"
+                  <div key={t.id}>
+                    <div
+                      onClick={() => setActiveThread(t.id)}
+                      className={`group flex items-center gap-1 px-2 py-1 cursor-pointer rounded-sm transition-colors ${
+                        activeThreadId === t.id
+                          ? 'bg-neutral-700 text-white'
+                          : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                      }`}
                     >
-                      x
-                    </button>
+                      {renamingId === t.id ? (
+                        <input
+                          ref={renameRef}
+                          value={renameValue}
+                          onChange={e => setRenameValue(e.target.value)}
+                          onBlur={() => commitRename(t.id)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') commitRename(t.id)
+                            if (e.key === 'Escape') setRenamingId(null)
+                          }}
+                          onClick={e => e.stopPropagation()}
+                          className="flex-1 bg-neutral-600 text-white text-xs px-1 rounded outline-none min-w-0"
+                        />
+                      ) : (
+                        <span className="truncate text-xs flex-1">{t.title}</span>
+                      )}
+                      <button
+                        onClick={e => { e.stopPropagation(); setMenuId(menuId === t.id ? null : t.id) }}
+                        className="opacity-0 group-hover:opacity-100 shrink-0 text-neutral-500 hover:text-neutral-200 text-xs px-0.5"
+                        aria-label="Thread options"
+                      >
+                        •••
+                      </button>
+                    </div>
+                    {menuId === t.id && (
+                      <div ref={menuRef} className="mx-2 mb-1 bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => startRename(t.id, t.title)}
+                          className="w-full text-left px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-700 transition-colors"
+                        >
+                          Rename
+                        </button>
+                        <button
+                          onClick={() => deleteThread(t.id)}
+                          className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-neutral-700 transition-colors border-t border-neutral-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
                 <button
