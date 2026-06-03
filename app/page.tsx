@@ -3,6 +3,7 @@ import { useStore } from '@/lib/store'
 import { Sidebar } from '@/components/Sidebar'
 import { ConversationPane } from '@/components/ConversationPane'
 import { DiffPanel } from '@/components/DiffPanel'
+import { TeamPanel } from '@/components/TeamPanel'
 
 export default function Home() {
   const { sidebarOpen, setSidebarOpen } = useStore()
@@ -24,6 +25,7 @@ export default function Home() {
         <ConversationPane />
         <DiffPanel />
       </main>
+      <TeamPanel />
     </div>
   )
 }
