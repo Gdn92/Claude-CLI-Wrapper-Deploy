@@ -8,6 +8,18 @@ import type { TurnEvent, ToolCallStartEvent, ToolCallEndEvent, Message } from '@
 
 const SERVER = process.env.NEXT_PUBLIC_PROCESS_SERVER_URL ?? 'http://localhost:3001'
 
+const SLASH_COMMANDS = [
+  { cmd: '/clear',   desc: 'Clear conversation display' },
+  { cmd: '/new',     desc: 'Start a new thread' },
+  { cmd: '/compact', desc: 'Compact conversation context' },
+  { cmd: '/review',  desc: 'Review recent changes' },
+  { cmd: '/help',    desc: 'Show Claude help' },
+  { cmd: '/cost',    desc: 'Show session cost' },
+  { cmd: '/doctor',  desc: 'Run environment diagnostics' },
+  { cmd: '/init',    desc: 'Initialize project CLAUDE.md' },
+  { cmd: '/status',  desc: 'Show auth and model status' },
+]
+
 interface DisplayItem {
   key: string
   type: 'text' | 'tool' | 'cost'
@@ -27,7 +39,13 @@ export function ConversationPane() {
   const [input, setInput] = useState('')
   const [items, setItems] = useState<DisplayItem[]>([])
   const [pinned, setPinned] = useState(false)
+  const [slashIdx, setSlashIdx] = useState(0)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const slashMatches = input.startsWith('/')
+    ? SLASH_COMMANDS.filter(c => c.cmd.startsWith(input.split(' ')[0]))
+    : []
   const activeProject = projects.find(p => p.id === activeProjectId)
 
   // Load existing messages when thread changes
@@ -88,10 +106,31 @@ export function ConversationPane() {
     if (!pinned) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [items, pinned])
 
+  function applySlash(cmd: string) {
+    setInput(cmd + ' ')
+    setSlashIdx(0)
+    textareaRef.current?.focus()
+  }
+
   async function send() {
     if (!input.trim() || !activeThreadId || !activeProject) return
     const content = input.trim()
     setInput('')
+    if (textareaRef.current) { textareaRef.current.style.height = 'auto' }
+
+    // App-level slash commands handled locally
+    if (content === '/clear') { setItems([]); return }
+    if (content === '/new') {
+      const t = await fetch(`${SERVER}/threads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: activeProjectId, title: 'New thread' }),
+      }).then(r => r.json())
+      const { setThreads, threads, setActiveThread } = useStore.getState()
+      setThreads([t, ...threads])
+      setActiveThread(t.id)
+      return
+    }
     setRunning(true)
     setItems(prev => [...prev, {
       key: `user-${Date.now()}`,
@@ -199,18 +238,49 @@ export function ConversationPane() {
       )}
 
       {/* Input bar */}
-      <div className="border-t border-neutral-800 px-4 py-3 flex gap-2 items-end bg-neutral-950 shrink-0">
+      <div className="border-t border-neutral-800 px-4 py-3 flex gap-2 items-end bg-neutral-950 shrink-0 relative">
+        {/* Slash command menu */}
+        {slashMatches.length > 0 && (
+          <div className="absolute bottom-full left-4 right-4 mb-1 bg-neutral-800 border border-neutral-700 rounded-xl overflow-hidden shadow-xl">
+            {slashMatches.map((c, i) => (
+              <button
+                key={c.cmd}
+                onClick={() => applySlash(c.cmd)}
+                className={`w-full text-left px-3 py-2 flex items-center gap-3 transition-colors ${
+                  i === slashIdx % slashMatches.length
+                    ? 'bg-neutral-700'
+                    : 'hover:bg-neutral-700/50'
+                }`}
+              >
+                <span className="text-orange-400 font-mono text-xs font-medium w-24 shrink-0">{c.cmd}</span>
+                <span className="text-neutral-400 text-xs">{c.desc}</span>
+              </button>
+            ))}
+          </div>
+        )}
         <textarea
+          ref={textareaRef}
           value={input}
           onChange={e => {
             setInput(e.target.value)
+            setSlashIdx(0)
             e.target.style.height = 'auto'
             e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px'
           }}
           onKeyDown={e => {
+            if (slashMatches.length > 0) {
+              if (e.key === 'ArrowUp') { e.preventDefault(); setSlashIdx(i => i - 1) }
+              if (e.key === 'ArrowDown') { e.preventDefault(); setSlashIdx(i => i + 1) }
+              if (e.key === 'Tab' || (e.key === 'Enter' && slashMatches.length > 1)) {
+                e.preventDefault()
+                applySlash(slashMatches[((slashIdx % slashMatches.length) + slashMatches.length) % slashMatches.length].cmd)
+                return
+              }
+            }
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
+            if (e.key === 'Escape') setInput('')
           }}
-          placeholder="Message Claude... (Shift+Enter for newline)"
+          placeholder="Message Claude... (/ for commands)"
           rows={1}
           className="flex-1 bg-neutral-900 text-white text-sm px-3 py-2 rounded-xl border border-neutral-700 focus:border-neutral-500 outline-none resize-none min-h-[38px] leading-relaxed"
           style={{ maxHeight: '160px', overflowY: 'auto' }}
