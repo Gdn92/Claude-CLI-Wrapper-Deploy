@@ -1,0 +1,1 @@
+{"type":"tool_result","tool_use_id":"toolu_01","content":"export const x = 1\nexport const y = 2","is_error":false}

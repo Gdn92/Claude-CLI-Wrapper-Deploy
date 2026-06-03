@@ -1,0 +1,1 @@
+{"type":"system","subtype":"init","session_id":"sess_abc123","cwd":"/Users/dev/myproject","tools":["Read","Write","Edit","Bash","Glob","Grep","LS"]}
