@@ -2,6 +2,7 @@
 import { useStore } from '@/lib/store'
 import { Sidebar } from '@/components/Sidebar'
 import { ConversationPane } from '@/components/ConversationPane'
+import { DiffPanel } from '@/components/DiffPanel'
 
 export default function Home() {
   const { sidebarOpen, setSidebarOpen } = useStore()
@@ -21,7 +22,7 @@ export default function Home() {
       )}
       <main className="flex flex-1 min-w-0">
         <ConversationPane />
-        <div className="w-96 border-l border-neutral-800 flex-shrink-0" />
+        <DiffPanel />
       </main>
     </div>
   )

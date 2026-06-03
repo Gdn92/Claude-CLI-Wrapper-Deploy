@@ -25,3 +25,14 @@ body {
     text-wrap: balance;
   }
 }
+
+/* diff2html dark theme — overrides the default light theme */
+.diff2html-wrapper .d2h-wrapper { background: transparent; }
+.diff2html-wrapper .d2h-file-header { background: #1a1a1a; border-color: #333; color: #aaa; }
+.diff2html-wrapper .d2h-code-linenumber { background: #111; border-color: #333; color: #555; }
+.diff2html-wrapper .d2h-code-line { background: #0d0d0d; color: #ccc; }
+.diff2html-wrapper .d2h-ins { background: #0d2b1a; color: #7ee787; }
+.diff2html-wrapper .d2h-ins .d2h-code-linenumber { background: #0a1f12; }
+.diff2html-wrapper .d2h-del { background: #2b0d0d; color: #ffa198; }
+.diff2html-wrapper .d2h-del .d2h-code-linenumber { background: #1f0a0a; }
+.diff2html-wrapper table { border-collapse: collapse; width: 100%; }
