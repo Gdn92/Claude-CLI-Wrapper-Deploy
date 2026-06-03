@@ -1,2 +1,63 @@
-// entry point placeholder — replace when server scaffold is implemented
-export {}
+import Fastify from 'fastify'
+import websocket from '@fastify/websocket'
+import { mkdirSync } from 'fs'
+import { join } from 'path'
+import { ThreadStore } from './thread-store'
+import { AgentBus } from './agent-bus'
+import { handleConnection } from './ws-handler'
+
+const PORT = parseInt(process.env.PORT ?? '3001')
+const DB_PATH = process.env.DB_PATH ?? join(process.cwd(), 'data', 'threads.db')
+
+mkdirSync(join(process.cwd(), 'data'), { recursive: true })
+
+const store = new ThreadStore(DB_PATH)
+const bus = new AgentBus()
+
+const app = Fastify({ logger: true })
+
+async function main() {
+  await app.register(websocket)
+
+  // WebSocket endpoint — one connection per browser session
+  app.get('/ws', { websocket: true }, (socket) => {
+    handleConnection(socket as any, bus, store)
+  })
+
+  // --- REST: thread/project CRUD ---
+
+  app.get('/projects', async () => store.listProjects())
+
+  app.post<{ Body: { path: string; name: string } }>('/projects', async (req) => {
+    return store.createProject(req.body.path, req.body.name)
+  })
+
+  app.get<{ Params: { projectId: string } }>('/projects/:projectId/threads', async (req) => {
+    return store.listThreads(req.params.projectId)
+  })
+
+  app.post<{ Body: { projectId: string; title: string } }>('/threads', async (req) => {
+    return store.createThread(req.body.projectId, req.body.title)
+  })
+
+  app.get<{ Params: { threadId: string } }>('/threads/:threadId/messages', async (req) => {
+    return store.getMessages(req.params.threadId)
+  })
+
+  app.delete<{ Params: { threadId: string } }>('/threads/:threadId', async (req) => {
+    store.deleteThread(req.params.threadId)
+    return { ok: true }
+  })
+
+  app.patch<{ Params: { threadId: string }; Body: { title: string } }>('/threads/:threadId/title', async (req) => {
+    store.updateThreadTitle(req.params.threadId, req.body.title)
+    return { ok: true }
+  })
+
+  await app.listen({ port: PORT, host: '0.0.0.0' })
+}
+
+main().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})
