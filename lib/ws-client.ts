@@ -1,4 +1,5 @@
 import type { TurnEvent } from './types'
+import { getProcessServerWsUrl } from './process-server'
 
 type EventHandler = (event: TurnEvent) => void
 
@@ -6,11 +7,13 @@ class WsClient {
   private ws: WebSocket | null = null
   private handlers: EventHandler[] = []
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private connecting = false
 
-  connect() {
-    if (this.ws?.readyState === WebSocket.OPEN || this.ws?.readyState === WebSocket.CONNECTING) return
-    const url = (process.env.NEXT_PUBLIC_PROCESS_SERVER_URL ?? 'http://localhost:3001')
-      .replace(/^http/, 'ws') + '/ws'
+  async connect() {
+    if (this.ws?.readyState === WebSocket.OPEN || this.ws?.readyState === WebSocket.CONNECTING || this.connecting) return
+    this.connecting = true
+    const url = await getProcessServerWsUrl()
+    this.connecting = false
     this.ws = new WebSocket(url)
     this.ws.onmessage = (e) => {
       try {

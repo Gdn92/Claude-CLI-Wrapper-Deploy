@@ -20,3 +20,7 @@ services:
         sync: false
       - key: SITE_PASSWORD
         sync: false
+      - key: PROCESS_SERVER_TOKEN
+        sync: false
+      - key: ALLOWED_ORIGIN
+        sync: false

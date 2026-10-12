@@ -1,7 +1,6 @@
 'use client'
 import { useEffect } from 'react'
-
-const SERVER = process.env.NEXT_PUBLIC_PROCESS_SERVER_URL ?? 'http://localhost:3001'
+import { serverFetch } from '@/lib/process-server'
 
 // Converts VAPID public key from base64url to Uint8Array for pushManager.subscribe
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -19,7 +18,7 @@ export function PushSetup() {
 
     navigator.serviceWorker.register('/sw.js').then(async (reg) => {
       try {
-        const vapidRes = await fetch(`${SERVER}/push/vapid-public-key`)
+        const vapidRes = await serverFetch(`/push/vapid-public-key`)
         const { key } = await vapidRes.json()
         if (!key) return // VAPID not configured yet
 
@@ -28,7 +27,7 @@ export function PushSetup() {
           applicationServerKey: urlBase64ToUint8Array(key).buffer as ArrayBuffer,
         })
 
-        await fetch(`${SERVER}/push/subscribe`, {
+        await serverFetch(`/push/subscribe`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(sub),

@@ -1,9 +1,8 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
 import { useStore } from '@/lib/store'
+import { serverFetch } from '@/lib/process-server'
 import type { Project, Thread } from '@/lib/types'
-
-const SERVER = process.env.NEXT_PUBLIC_PROCESS_SERVER_URL ?? 'http://localhost:3001'
 
 export function Sidebar() {
   const {
@@ -18,7 +17,7 @@ export function Sidebar() {
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    fetch(`${SERVER}/projects`)
+    serverFetch(`/projects`)
       .then(r => r.json())
       .then(setProjects)
       .catch(() => {})
@@ -26,7 +25,7 @@ export function Sidebar() {
 
   useEffect(() => {
     if (!activeProjectId) return
-    fetch(`${SERVER}/projects/${activeProjectId}/threads`)
+    serverFetch(`/projects/${activeProjectId}/threads`)
       .then(r => r.json())
       .then(setThreads)
       .catch(() => {})
@@ -46,7 +45,7 @@ export function Sidebar() {
     const path = prompt('Project directory path (absolute):')
     const name = prompt('Project name:')
     if (!path || !name) return
-    const p: Project = await fetch(`${SERVER}/projects`, {
+    const p: Project = await serverFetch(`/projects`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ path, name }),
@@ -57,7 +56,7 @@ export function Sidebar() {
 
   async function newThread() {
     if (!activeProjectId) return
-    const t: Thread = await fetch(`${SERVER}/threads`, {
+    const t: Thread = await serverFetch(`/threads`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ projectId: activeProjectId, title: 'New thread' }),
@@ -76,7 +75,7 @@ export function Sidebar() {
   async function commitRename(id: string) {
     const title = renameValue.trim()
     if (!title) { setRenamingId(null); return }
-    await fetch(`${SERVER}/threads/${id}/title`, {
+    await serverFetch(`/threads/${id}/title`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title }),
@@ -88,7 +87,7 @@ export function Sidebar() {
   async function deleteThread(id: string) {
     setMenuId(null)
     if (!confirm('Delete this thread?')) return
-    await fetch(`${SERVER}/threads/${id}`, { method: 'DELETE' })
+    await serverFetch(`/threads/${id}`, { method: 'DELETE' })
     setThreads(threads.filter(t => t.id !== id))
     if (activeThreadId === id) setActiveThread('')
   }
