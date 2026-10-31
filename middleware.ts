@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { computeAuthCookieValue, timingSafeEqualHex } from '@/lib/auth-cookie'
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const cookie = req.cookies.get('auth')
-  if (cookie?.value === process.env.SITE_PASSWORD) {
-    return NextResponse.next()
+  const sitePassword = process.env.SITE_PASSWORD
+  if (cookie?.value && sitePassword) {
+    const expected = await computeAuthCookieValue(sitePassword)
+    if (timingSafeEqualHex(cookie.value, expected)) {
+      return NextResponse.next()
+    }
   }
   const url = req.nextUrl.clone()
   if (url.pathname === '/login' || url.pathname === '/api/login') return NextResponse.next()

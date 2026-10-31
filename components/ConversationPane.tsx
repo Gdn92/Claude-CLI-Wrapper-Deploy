@@ -2,11 +2,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useStore } from '@/lib/store'
 import { wsClient } from '@/lib/ws-client'
+import { serverFetch } from '@/lib/process-server'
 import { TextBubble } from './ui/TextBubble'
 import { ToolCallCard } from './ToolCallCard'
 import type { TurnEvent, ToolCallStartEvent, ToolCallEndEvent, Message } from '@/lib/types'
-
-const SERVER = process.env.NEXT_PUBLIC_PROCESS_SERVER_URL ?? 'http://localhost:3001'
 
 const SLASH_COMMANDS = [
   { cmd: '/clear',   desc: 'Clear conversation display' },
@@ -51,7 +50,7 @@ export function ConversationPane() {
   // Load existing messages when thread changes
   useEffect(() => {
     if (!activeThreadId) { setItems([]); return }
-    fetch(`${SERVER}/threads/${activeThreadId}/messages`)
+    serverFetch(`/threads/${activeThreadId}/messages`)
       .then(r => r.json())
       .then((msgs: Message[]) => {
         setItems(msgs.map(m => ({
@@ -121,7 +120,7 @@ export function ConversationPane() {
     // App-level slash commands handled locally
     if (content === '/clear') { setItems([]); return }
     if (content === '/new') {
-      const t = await fetch(`${SERVER}/threads`, {
+      const t = await serverFetch(`/threads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId: activeProjectId, title: 'New thread' }),
@@ -143,7 +142,7 @@ export function ConversationPane() {
     const userMessages = items.filter(i => i.role === 'user')
     if (userMessages.length === 0) {
       const title = content.slice(0, 60)
-      fetch(`${SERVER}/threads/${activeThreadId}/title`, {
+      serverFetch(`/threads/${activeThreadId}/title`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title }),

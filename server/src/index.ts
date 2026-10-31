@@ -9,10 +9,24 @@ import { AgentBus } from './agent-bus'
 import { handleConnection } from './ws-handler'
 import { PushService } from './push-service'
 import { TaskRunner } from './task-runner'
+import { isAuthorized, extractBearerToken } from './auth'
 import type webpush from 'web-push'
 
 const PORT = parseInt(process.env.PORT ?? '3001')
 const DB_PATH = process.env.DB_PATH ?? join(process.cwd(), 'data', 'threads.db')
+const TOKEN = process.env.PROCESS_SERVER_TOKEN
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN
+
+// Fail closed: a production deploy with no token would otherwise bind
+// 0.0.0.0 wide open (LAN / public Render URL) with zero auth.
+if (process.env.NODE_ENV === 'production' && !TOKEN) {
+  console.error(
+    'FATAL: PROCESS_SERVER_TOKEN is not set and NODE_ENV=production. ' +
+    'Refusing to start an unauthenticated process server on a public host. ' +
+    'Set PROCESS_SERVER_TOKEN in the environment.'
+  )
+  process.exit(1)
+}
 
 mkdirSync(join(process.cwd(), 'data'), { recursive: true })
 
@@ -24,8 +38,30 @@ const taskRunner = new TaskRunner(store, push)
 const app = Fastify({ logger: true })
 
 async function main() {
-  await app.register(cors, { origin: true })
+  await app.register(cors, {
+    origin: ALLOWED_ORIGIN ?? /^http:\/\/localhost(:\d+)?$/,
+  })
   await app.register(websocket)
+
+  if (TOKEN) {
+    // Every route (REST + the /ws upgrade) requires the bearer token.
+    // Browsers can't set WS headers, so the /ws upgrade also accepts
+    // ?token=. Failure is always the same 401 body regardless of which
+    // sub-condition failed (missing header, missing query, wrong value).
+    app.addHook('onRequest', async (req, reply) => {
+      const headerToken = extractBearerToken(req.headers.authorization)
+      const queryToken = (req.query as Record<string, string> | undefined)?.token
+      const provided = headerToken ?? queryToken
+      if (!isAuthorized(provided, TOKEN)) {
+        reply.code(401).send({ error: 'Unauthorized' })
+      }
+    })
+  } else {
+    app.log.warn(
+      'PROCESS_SERVER_TOKEN is not set. Binding to 127.0.0.1 only (local-only mode). ' +
+      'No request is authenticated — do not expose this process to a network.'
+    )
+  }
 
   // WebSocket endpoint — one connection per browser session
   app.get('/ws', { websocket: true }, (socket) => {
@@ -82,7 +118,7 @@ async function main() {
     return { taskId, status: 'running' }
   })
 
-  await app.listen({ port: PORT, host: '0.0.0.0' })
+  await app.listen({ port: PORT, host: TOKEN ? '0.0.0.0' : '127.0.0.1' })
 }
 
 main().catch((err) => {
